@@ -4,7 +4,7 @@ services:
     env: python
     build:
       environment: python
-      pythonVersion: 3.11.9   # MUST be exact here, not 3.13.x or default
+      pythonVersion: 3.11.9  # Explicitly pin 3.11.x here
     buildCommand: |
       pip install --upgrade pip setuptools wheel
       pip install numpy==1.24.4
