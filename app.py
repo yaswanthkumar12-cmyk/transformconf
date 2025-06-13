@@ -11,8 +11,13 @@ seen_ips = set()
 
 def get_client_ip():
     """Get real client IP behind proxies like Render"""
-    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
-
+    x_forwarded_for = request.headers.get('X-Forwarded-For')
+    if x_forwarded_for:
+        # Sometimes multiple IPs, take first
+        ip = x_forwarded_for.split(',')[0].strip()
+    else:
+        ip = request.remote_addr
+    return ip
 def check_quota(ip):
     # Bypass quota for localhost or internal IPs
     if ip in ("127.0.0.1", "::1"):
