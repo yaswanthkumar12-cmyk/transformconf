@@ -5,5 +5,8 @@ services:
     build:
       environment: python
       pythonVersion: 3.11
-    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
+    buildCommand: |
+      pip install --upgrade pip setuptools wheel
+      pip install numpy==1.25.2
+      pip install -r requirements.txt
     startCommand: python app.py
