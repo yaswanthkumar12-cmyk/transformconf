@@ -5,20 +5,28 @@ import pandas as pd
 
 app = Flask(__name__)
 
-# In-memory IP quota tracker
+# In-memory IP quota tracker and seen IPs
 usage_tracker = {}
+seen_ips = set()
+
+def get_client_ip():
+    """Get real client IP behind proxies like Render"""
+    return request.headers.get('X-Forwarded-For', request.remote_addr).split(',')[0].strip()
 
 def check_quota(ip):
+    # Bypass quota for localhost or internal IPs
+    if ip in ("127.0.0.1", "::1"):
+        return True
+
     today = datetime.utcnow().date()
     record = usage_tracker.get(ip, {"count": 0, "date": today})
-    
+
     if record["date"] != today:
-        # Reset count for a new day
         record = {"count": 0, "date": today}
-    
+
     if record["count"] >= 5:
-        return False  # Quota exceeded
-    
+        return False
+
     record["count"] += 1
     usage_tracker[ip] = record
     return True
@@ -162,11 +170,14 @@ def apply_field_mapping(format_str, field_mapping):
 
 @app.route('/')
 def index():
+    ip = get_client_ip()
+    seen_ips.add(ip)
     return render_template('transform_conf.html')
 
 @app.route('/generate', methods=['POST'])
 def generate_regex():
-    ip = request.remote_addr
+    ip = get_client_ip()
+    seen_ips.add(ip)
 
     if not check_quota(ip):
         return jsonify({'result': f"❌ Quota exceeded for IP {ip}. Only 5 regex generations allowed per day."})
@@ -213,10 +224,8 @@ DEST_KEY = _raw
     log_lines = [line.strip() for line in logs_raw.splitlines() if line.strip()]
     result = process_logs(log_lines, stanza)
     return jsonify({'result': result})
+
 if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=True)
-
-
-
