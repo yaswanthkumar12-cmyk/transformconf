@@ -5,5 +5,7 @@ services:
     build:
       environment: python
       pythonVersion: 3.12
-    buildCommand: pip install -r requirements.txt
-    startCommand: python app.py  # Replace with your app’s start command
+    buildCommand: |
+      pip install --upgrade pip setuptools wheel
+      pip install -r requirements.txt
+    startCommand: python app.py
