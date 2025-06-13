@@ -4,9 +4,9 @@ services:
     env: python
     build:
       environment: python
-      pythonVersion: 3.11
+      pythonVersion: 3.11.9   # MUST be exact here, not 3.13.x or default
     buildCommand: |
       pip install --upgrade pip setuptools wheel
-      pip install numpy==1.25.2
+      pip install numpy==1.24.4
       pip install -r requirements.txt
     startCommand: python app.py
