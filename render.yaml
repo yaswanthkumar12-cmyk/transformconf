@@ -1,11 +1,9 @@
 services:
   - type: web
-    name: your-app-name
+    name: transformconf
     env: python
     build:
       environment: python
-      pythonVersion: 3.12
-    buildCommand: |
-      pip install --upgrade pip setuptools wheel
-      pip install -r requirements.txt
+      pythonVersion: 3.11
+    buildCommand: pip install --upgrade pip setuptools wheel && pip install -r requirements.txt
     startCommand: python app.py
