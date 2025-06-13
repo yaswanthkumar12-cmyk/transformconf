@@ -1,5 +1,5 @@
 Flask==2.3.2
 pandas==2.0.3
 numpy==1.25.2
-setuptools>=42
+setuptools>=61.0.0
 wheel

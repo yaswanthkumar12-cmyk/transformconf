@@ -16,7 +16,7 @@ def check_quota(ip):
         # Reset count for a new day
         record = {"count": 0, "date": today}
     
-    if record["count"] >= 5:
+    if record["count"] >= 10:
         return False  # Quota exceeded
     
     record["count"] += 1
