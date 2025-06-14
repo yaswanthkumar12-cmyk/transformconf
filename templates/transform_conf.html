@@ -14,7 +14,6 @@
       display: flex;
       justify-content: center;
       align-items: flex-start;
-      font-family: system-ui, sans-serif;
     }
     .form-container {
       max-width: 900px;
@@ -54,10 +53,6 @@
       outline-offset: 2px;
       outline: 3px solid #0d6efd;
     }
-    .btn-toggle.active {
-      background-color: #0d6efd;
-      color: white;
-    }
   </style>
 </head>
 <body>
@@ -65,8 +60,8 @@
     <h1>Splunk App Builder - Upload Logs</h1>
 
     <div class="mb-4 text-center" role="group" aria-label="Toggle input mode">
-      <button type="button" class="btn btn-outline-primary btn-toggle me-2" id="manualBtn" aria-pressed="false" aria-controls="manualForm">Manual Input</button>
-      <button type="button" class="btn btn-outline-secondary btn-toggle" id="uploadBtn" aria-pressed="false" aria-controls="uploadForm">Upload File</button>
+      <button type="button" class="btn btn-outline-primary me-2" id="manualBtn" aria-pressed="false" aria-controls="manualForm">Manual Input</button>
+      <button type="button" class="btn btn-outline-secondary" id="uploadBtn" aria-pressed="false" aria-controls="uploadForm">Upload File</button>
     </div>
 
     <!-- Manual Form -->
@@ -130,31 +125,14 @@
     const uploadCopyBtn = document.getElementById('uploadCopyBtn');
     const manualOutput = document.getElementById('manualOutput');
 
-    const manualBtn = document.getElementById('manualBtn');
-    const uploadBtn = document.getElementById('uploadBtn');
+    // Initially hide both forms
+    manualForm.style.display = 'none';
+    uploadForm.style.display = 'none';
 
-    // Show manual form by default
-    function showManual() {
-      manualForm.style.display = 'block';
-      uploadForm.style.display = 'none';
-      resetUploadForm();
-      manualOutput.textContent = 'Your transforms.conf will appear here...';
-      toggleButtons('manual');
-    }
-
-    // Show upload form
-    function showUpload() {
-      manualForm.style.display = 'none';
-      uploadForm.style.display = 'block';
-      resetUploadForm();
-      uploadOutput.textContent = 'Your transforms.conf will appear here...';
-      uploadOutput.style.display = 'none';
-      toggleButtons('upload');
-    }
-
-    // Toggle button active states and aria-pressed
-    function toggleButtons(selected) {
-      if (selected === 'manual') {
+    function toggleButtons(selectedBtn) {
+      const manualBtn = document.getElementById('manualBtn');
+      const uploadBtn = document.getElementById('uploadBtn');
+      if (selectedBtn === 'manual') {
         manualBtn.classList.add('active');
         manualBtn.setAttribute('aria-pressed', 'true');
         uploadBtn.classList.remove('active');
@@ -167,11 +145,21 @@
       }
     }
 
-    manualBtn.addEventListener('click', showManual);
-    uploadBtn.addEventListener('click', showUpload);
+    document.getElementById('manualBtn').onclick = () => {
+      manualForm.style.display = 'block';
+      uploadForm.style.display = 'none';
+      resetUploadForm();
+      manualOutput.textContent = 'Your transforms.conf will appear here...';
+      toggleButtons('manual');
+    };
 
-    // Initialize with manual form shown
-    showManual();
+    document.getElementById('uploadBtn').onclick = () => {
+      manualForm.style.display = 'none';
+      uploadForm.style.display = 'block';
+      resetUploadForm();
+      uploadOutput.textContent = 'Your transforms.conf will appear here...';
+      toggleButtons('upload');
+    };
 
     function resetUploadForm() {
       expectedCountInput.value = '';
@@ -182,9 +170,6 @@
       generateBtn.disabled = true;
       uploadOutput.textContent = 'Your transforms.conf will appear here...';
       uploadOutput.style.display = 'none';
-
-      // Reset label display for output
-      document.querySelector('label[for="uploadOutput"]').style.display = 'none';
     }
 
     countNextBtn.onclick = () => {
@@ -197,9 +182,6 @@
       uploadGroupsContainer.style.display = 'block';
       uploadGenerateSection.style.display = 'block';
       uploadOutput.style.display = 'block';
-
-      // Show label for output
-      document.querySelector('label[for="uploadOutput"]').style.display = 'block';
 
       uploadGroupsContainer.innerHTML = '';
 
@@ -214,207 +196,124 @@
           </div>
           <div class="mb-3">
             <label for="log-file-${i}" class="form-label">Upload Log File</label>
-            <input type="file" id="log-file-${i}" class="form-control log-file-input" accept=".log,.txt" aria-describedby="logFileHelp${i}" required />
-            <div id="logFileHelp${i}" class="form-text">Upload a log file with 2 to 10 lines.</div>
-          </div>
-          <div>
-            <small id="file-status-${i}" class="text-muted"></small>
+            <input type="file" id="log-file-${i}" class="form-control log-file-input" accept=".txt,.log" required />
+            <div class="form-text">File must have 2-10 non-empty lines.</div>
           </div>
         `;
         uploadGroupsContainer.appendChild(div);
       }
-      validateUploadInputs();
+      checkGenerateReady();
     };
 
-    function validateUploadInputs() {
-      // Check all inputs filled and files valid
-      const names = uploadGroupsContainer.querySelectorAll('.source-name-input');
-      const files = uploadGroupsContainer.querySelectorAll('.log-file-input');
-      let allValid = true;
+    function checkGenerateReady() {
+      const sourceInputs = uploadGroupsContainer.querySelectorAll('.source-name-input');
+      const fileInputs = uploadGroupsContainer.querySelectorAll('.log-file-input');
+      let allFilled = sourceInputs.length > 0 && fileInputs.length > 0;
 
-      for (let i = 0; i < names.length; i++) {
-        const name = names[i].value.trim();
-        const fileInput = files[i];
-        const statusEl = document.getElementById(`file-status-${i}`);
+      sourceInputs.forEach(input => {
+        if (!input.value.trim()) allFilled = false;
+      });
+      fileInputs.forEach(input => {
+        if (input.files.length === 0) allFilled = false;
+      });
 
-        if (!name) {
-          allValid = false;
-          statusEl.textContent = "Please enter a source name.";
-          statusEl.classList.remove('text-success');
-          statusEl.classList.add('text-danger');
-          continue;
-        }
-
-        const file = fileInput.files[0];
-        if (!file) {
-          allValid = false;
-          statusEl.textContent = "Please upload a file.";
-          statusEl.classList.remove('text-success');
-          statusEl.classList.add('text-danger');
-          continue;
-        }
-
-        // Check file line count asynchronously is tricky, so we do on generate
-        statusEl.textContent = '';
-      }
-
-      generateBtn.disabled = !allValid;
+      generateBtn.disabled = !allFilled;
     }
 
-    // Validate inputs on change
-    uploadGroupsContainer.addEventListener('input', (e) => {
-      if (e.target.classList.contains('source-name-input') || e.target.classList.contains('log-file-input')) {
-        validateUploadInputs();
-      }
+    uploadGroupsContainer.addEventListener('input', e => {
+      if (e.target.classList.contains('source-name-input')) checkGenerateReady();
+    });
+    uploadGroupsContainer.addEventListener('change', e => {
+      if (e.target.classList.contains('log-file-input')) checkGenerateReady();
     });
 
-    // Validate file line count on file load and update status
-    uploadGroupsContainer.addEventListener('change', async (e) => {
-      if (e.target.classList.contains('log-file-input')) {
-        const index = Array.from(uploadGroupsContainer.querySelectorAll('.log-file-input')).indexOf(e.target);
-        const statusEl = document.getElementById(`file-status-${index}`);
-        const file = e.target.files[0];
-        if (!file) {
-          statusEl.textContent = 'Please upload a file.';
-          statusEl.classList.remove('text-success');
-          statusEl.classList.add('text-danger');
-          validateUploadInputs();
-          return;
+    generateBtn.onclick = async () => {
+      const count = parseInt(expectedCountInput.value.trim());
+      const sourceInputs = uploadGroupsContainer.querySelectorAll('.source-name-input');
+      const fileInputs = uploadGroupsContainer.querySelectorAll('.log-file-input');
+
+      const groups = [];
+
+      try {
+        for (let i = 0; i < count; i++) {
+          const sourceName = sourceInputs[i].value.trim();
+          const file = fileInputs[i].files[0];
+          if (!file) {
+            alert(`Please upload log file for group ${i + 1}`);
+            return;
+          }
+          const fileText = await readFileAsText(file);
+          const lines = fileText.split('\n').filter(l => l.trim());
+          if (lines.length < 2 || lines.length > 10) {
+            alert(`Log file for group ${i + 1} must have between 2 and 10 non-empty lines.`);
+            return;
+          }
+          groups.push({
+            source: sourceName,
+            logs: fileText.trim()
+          });
         }
 
-        const lines = await readFileLines(file);
-        if (lines.length < 2 || lines.length > 10) {
-          statusEl.textContent = `File must contain between 2 and 10 lines. Current lines: ${lines.length}`;
-          statusEl.classList.remove('text-success');
-          statusEl.classList.add('text-danger');
-        } else {
-          statusEl.textContent = `File looks good (${lines.length} lines)`;
-          statusEl.classList.remove('text-danger');
-          statusEl.classList.add('text-success');
-        }
-        validateUploadInputs();
+        const res = await fetch('/generate', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ groups })
+        });
+        const data = await res.json();
+        uploadOutput.textContent = data.result;
+        uploadOutput.focus();
+      } catch (err) {
+        console.error(err);
+        uploadOutput.textContent = '❌ Error: Could not read files or reach server.';
+        uploadOutput.focus();
       }
-    });
+    };
 
-    // Read file lines helper
-    function readFileLines(file) {
+    function readFileAsText(file) {
       return new Promise((resolve, reject) => {
         const reader = new FileReader();
-        reader.onload = e => {
-          const content = e.target.result;
-          const lines = content.split(/\r?\n/).filter(l => l.trim().length > 0);
-          resolve(lines);
-        };
-        reader.onerror = e => reject(e);
+        reader.onload = () => resolve(reader.result);
+        reader.onerror = () => reject(reader.error);
         reader.readAsText(file);
       });
     }
 
-    // Generate transforms.conf from manual logs
-    manualForm.addEventListener('submit', async (e) => {
+    uploadCopyBtn.onclick = () => {
+      const text = uploadOutput.textContent;
+      if (text) navigator.clipboard.writeText(text).then(() => alert("Copied all outputs!"));
+    };
+
+    manualForm.addEventListener('submit', async e => {
       e.preventDefault();
-      const stanza = manualForm.manualStanza.value.trim();
-      const logs = manualForm.manualLogs.value.trim();
-      if (!stanza) {
-        alert('Please enter a source name.');
-        manualForm.manualStanza.focus();
+      const logs = document.getElementById('manualLogs').value.trim();
+      const stanza = document.getElementById('manualStanza').value.trim() || "custom_log_extract";
+      const lineCount = logs.split("\n").filter(l => l.trim()).length;
+
+      if (lineCount < 2 || lineCount > 10) {
+        alert("Enter between 2 and 10 log lines.");
         return;
       }
-      const logLines = logs.split(/\r?\n/).filter(line => line.trim() !== '');
-      if (logLines.length < 2 || logLines.length > 10) {
-        alert('Please enter between 2 and 10 sample log lines.');
-        manualForm.manualLogs.focus();
-        return;
-      }
-      manualOutput.textContent = "Generating... Please wait.";
+
       try {
-        const response = await fetch('/generate', {
+        const res = await fetch('/generate', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ stanza, logs: logLines })
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({ logs, stanza })
         });
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Server error: ${text}`);
-        }
-        const data = await response.json();
-        manualOutput.textContent = data.result || "No output returned.";
-      } catch (err) {
-        manualOutput.textContent = `Error: ${err.message}`;
+
+        const data = await res.json();
+        manualOutput.textContent = data.result;
+        manualOutput.focus();
+      } catch {
+        manualOutput.textContent = '❌ Error: Could not reach server.';
+        manualOutput.focus();
       }
     });
 
-    // Generate transforms.conf from uploaded files
-    generateBtn.onclick = async () => {
-      const count = uploadGroupsContainer.childElementCount;
-      const configs = [];
-      for (let i = 0; i < count; i++) {
-        const sourceNameInput = document.getElementById(`source-name-${i}`);
-        const fileInput = document.getElementById(`log-file-${i}`);
-        const statusEl = document.getElementById(`file-status-${i}`);
-
-        const stanza = sourceNameInput.value.trim();
-        const file = fileInput.files[0];
-
-        if (!stanza) {
-          alert(`Please enter source name for config ${i + 1}.`);
-          sourceNameInput.focus();
-          return;
-        }
-        if (!file) {
-          alert(`Please upload a file for config ${i + 1}.`);
-          fileInput.focus();
-          return;
-        }
-
-        const lines = await readFileLines(file);
-        if (lines.length < 2 || lines.length > 10) {
-          alert(`Uploaded file for config ${i + 1} must have between 2 and 10 lines.`);
-          fileInput.focus();
-          return;
-        }
-
-        configs.push({ stanza, logs: lines });
-      }
-
-      uploadOutput.textContent = "Generating... Please wait.";
-      try {
-        const response = await fetch('/generate', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ configs })
-        });
-        if (!response.ok) {
-          const text = await response.text();
-          throw new Error(`Server error: ${text}`);
-        }
-        const data = await response.json();
-        uploadOutput.textContent = data.result || "No output returned.";
-      } catch (err) {
-        uploadOutput.textContent = `Error: ${err.message}`;
-      }
-    };
-
-    // Clipboard copy handlers
     document.getElementById('manualCopyBtn').onclick = () => {
-      copyTextToClipboard(manualOutput.textContent);
+      const text = manualOutput.textContent;
+      if (text) navigator.clipboard.writeText(text).then(() => alert("Copied!"));
     };
-
-    uploadCopyBtn.onclick = () => {
-      copyTextToClipboard(uploadOutput.textContent);
-    };
-
-    function copyTextToClipboard(text) {
-      if (!text || text.trim().length === 0) {
-        alert("Nothing to copy!");
-        return;
-      }
-      navigator.clipboard.writeText(text).then(() => {
-        alert("Copied to clipboard!");
-      }, () => {
-        alert("Failed to copy. Please copy manually.");
-      });
-    }
   </script>
 </body>
 </html>
