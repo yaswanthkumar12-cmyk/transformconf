@@ -185,7 +185,7 @@ def generate_regex():
     seen_ips.add(ip)
 
     if not check_quota(ip):
-        return jsonify({'result': f"❌ Quota exceeded for IP {ip}. Only 5 regex generations allowed per day."})
+        return jsonify({'result': f"❌ Quota exceeded for IP {ip}. Only 1 regex generations allowed per day. Better to change the network"})
 
     data = request.get_json()
     stanza = data.get('stanza', 'custom_log_extract').strip()
