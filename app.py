@@ -29,7 +29,7 @@ def check_quota(ip):
     if record["date"] != today:
         record = {"count": 0, "date": today}
 
-    if record["count"] >= 5:
+    if record["count"] >= 1:
         return False
 
     record["count"] += 1
